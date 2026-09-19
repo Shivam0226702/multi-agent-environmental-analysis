@@ -1,13 +1,13 @@
 # ==============================================================================
 # Multi-Agent Environmental Analysis System
-# Phase 0: Foundation Dependencies
+# Dependencies (Phase 0 & Phase 1)
 # ==============================================================================
-# NOTE: Only core foundation packages are included at this stage.
-# Specialized libraries (e.g. LangChain, LangGraph, rasterio, geopandas)
-# will be introduced incrementally during their respective phases.
 
 # Environment configuration management
 python-dotenv>=1.0.1
+
+# HTTP client for STAC API metadata querying (Phase 1)
+requests>=2.31.0
 
 # Data validation, schema definitions, and settings management
 pydantic>=2.7.0
@@ -17,3 +17,7 @@ typing-extensions>=4.10.0
 
 # Unit and integration testing framework
 pytest>=8.0.0
+
+# NOTE: Heavy geospatial libraries (e.g. rasterio, geopandas) and agent orchestration
+# frameworks (e.g. langgraph, langchain) will be introduced in subsequent phases
+# (Phases 2-4) when image processing and agent state graphs are implemented.

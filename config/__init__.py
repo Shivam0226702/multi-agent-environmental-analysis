@@ -1,5 +1,22 @@
 """Configuration Package.
 
-This package provides application settings, environment loader utilities,
-and default parameters for pipelines and agent runs.
+Provides application settings, CDSE STAC endpoints, and example AOI configurations.
 """
+
+from config.settings import (
+    AOIConfig,
+    CDSE_COLLECTION_SENTINEL2_L2A,
+    CDSE_STAC_BASE_URL,
+    CDSE_TOKEN_URL,
+    DEFAULT_AOI,
+    EXAMPLE_AOIS,
+)
+
+__all__ = [
+    "AOIConfig",
+    "CDSE_COLLECTION_SENTINEL2_L2A",
+    "CDSE_STAC_BASE_URL",
+    "CDSE_TOKEN_URL",
+    "DEFAULT_AOI",
+    "EXAMPLE_AOIS",
+]
