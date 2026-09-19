@@ -133,3 +133,10 @@ Therefore, our recommended download strategy:
    - Combined download: ~195 MB per scene (an 80% reduction compared to the full SAFE archive).
 2. **Spatial Windowing / Clipping**: In Phase 2, explore spatial window reads (using GDAL/rasterio VSI curl or OData chunking) to fetch only the bounding box sub-window rather than the entire 100 km $\times$ 100 km tile.
 3. **Offline Sample Fallback**: Store one pre-downloaded dual-temporal sample pair in `data/sample/` so that unit tests, classroom evaluations, and offline demonstrations remain 100% reliable without live network dependencies.
+
+---
+
+## 9. Next Steps
+
+For practical implementation details, Sanjay Gandhi National Park study area configuration, and targeted band download plans, see [docs/data_acquisition.md](file:///docs/data_acquisition.md).
+
