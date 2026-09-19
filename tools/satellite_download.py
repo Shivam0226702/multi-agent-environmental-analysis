@@ -87,16 +87,16 @@ def get_cdse_access_token(
     Raises:
         AuthenticationRequiredError: If credentials are missing or rejected by CDSE.
     """
-    user = username or os.getenv("CDSE_USERNAME") or CDSE_USERNAME
-    pwd = password or os.getenv("CDSE_PASSWORD") or CDSE_PASSWORD
+    user = username if username is not None else (os.getenv("CDSE_USERNAME") or CDSE_USERNAME)
+    pwd = password if password is not None else (os.getenv("CDSE_PASSWORD") or CDSE_PASSWORD)
     endpoint = token_url or os.getenv("CDSE_TOKEN_URL") or CDSE_TOKEN_URL
 
     # Check for direct access token in environment first
     direct_token = os.getenv("CDSE_ACCESS_TOKEN", "").strip()
-    if direct_token:
+    if direct_token and not direct_token.startswith("your_"):
         return direct_token
 
-    if not user or not pwd:
+    if not user or not pwd or user.startswith("your_") or pwd.startswith("your_"):
         raise AuthenticationRequiredError(
             "CDSE credentials not found. Asset download requires authentication.\n"
             "Please provide credentials in '.env' or environment variables:\n"
@@ -140,6 +140,39 @@ def get_cdse_access_token(
         raise
     except Exception as exc:
         raise AuthenticationRequiredError(f"Failed to connect to CDSE identity endpoint: {exc}") from exc
+
+
+def check_cdse_authentication() -> Tuple[bool, str]:
+    """Safely verify CDSE authentication without printing or leaking secrets.
+
+    Returns:
+        Tuple of (is_authenticated: bool, status_message: str).
+        Status messages strictly follow:
+          - "Authentication successful"
+          - "CDSE credentials not configured locally."
+          - "Authentication failed"
+    """
+    user = os.getenv("CDSE_USERNAME", "").strip()
+    pwd = os.getenv("CDSE_PASSWORD", "").strip()
+    token = os.getenv("CDSE_ACCESS_TOKEN", "").strip()
+
+    has_user_pwd = bool(user and pwd and not user.startswith("your_") and not pwd.startswith("your_"))
+    has_token = bool(token and not token.startswith("your_"))
+
+    if not has_user_pwd and not has_token:
+        return False, "CDSE credentials not configured locally."
+
+    try:
+        tok = get_cdse_access_token()
+        if tok and len(tok) > 20:
+            return True, "Authentication successful"
+        return False, "Authentication failed"
+    except AuthenticationRequiredError as err:
+        # Sanitize error to ensure no sensitive text is returned
+        clean_err = str(err).split("\n")[0]
+        return False, f"Authentication failed: {clean_err}"
+    except Exception as err:
+        return False, f"Authentication failed: {type(err).__name__}"
 
 
 # ------------------------------------------------------------------------------

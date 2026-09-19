@@ -94,19 +94,54 @@ The download routine (`download_single_asset()`) ensures:
 
 ---
 
-## 6. How to Enable Real Image Downloads
+## 6. Credentials, Authentication Verification & Download Workflow
 
-To download real raster imagery for the selected scenes:
-1. Create a free account at [dataspace.copernicus.eu](https://dataspace.copernicus.eu).
-2. Copy `.env.example` to `.env`.
-3. Fill in your credentials:
-   ```env
-   CDSE_USERNAME=your_registered_email@example.com
-   CDSE_PASSWORD=your_password
-   ```
-4. Run the download function:
-   ```python
-   from tools.satellite_download import download_scene_assets
-   # Will stream B04, B08, and SCL into data/raw/<scene_id>/
-   download_scene_assets(scene_metadata, output_dir="data/raw")
-   ```
+### Local Credentials Storage (`.env`)
+- CDSE credentials are stored **exclusively** in the local `.env` file at the project root.
+- The `.env` file is explicitly ignored in `.gitignore` (`.gitignore:42:.env`) and is **never committed** to Git.
+- Credentials template is provided in `.env.example`:
+  ```env
+  CDSE_USERNAME=your_registered_email@example.com
+  CDSE_PASSWORD=your_password
+  # Or optional direct token:
+  CDSE_ACCESS_TOKEN=your_direct_token_here
+  ```
+
+### How Authentication Is Verified
+To verify CDSE authentication without printing, logging, or exposing secrets, use `check_cdse_authentication()`:
+```python
+from tools.satellite_download import check_cdse_authentication
+
+is_authenticated, status_message = check_cdse_authentication()
+print(status_message)
+# Outputs:
+#   "Authentication successful"
+#   OR
+#   "CDSE credentials not configured locally."
+#   OR
+#   "Authentication failed"
+```
+
+### Storage Location for Raw Satellite Imagery
+- All downloaded satellite bands are saved under `data/raw/<scene_id>/`.
+- The `data/raw/*` directory is ignored by `.gitignore` to keep binary raster files outside version control.
+
+### Single-Asset Download Verification
+Before downloading all required bands (~447 MB total), single-asset download is verified using the lightweight Scene Classification Layer (`SCL_20m`, ~0.45 MB):
+```python
+from tools.satellite_download import download_single_asset, plan_scene_downloads
+from tools.satellite_data import search_sentinel2
+from config.settings import DEFAULT_AOI
+
+# 1. Discover target scene
+scenes = search_sentinel2(DEFAULT_AOI.bbox, "2024-04-15", "2024-04-17", max_cloud_cover=5.0, limit=1)
+
+# 2. Plan single SCL asset download
+plan = plan_scene_downloads(scenes[0], bands=["SCL"])[0]
+
+# 3. Stream download to data/raw/<scene_id>/
+file_path = download_single_asset(plan, destination_dir=f"data/raw/{scenes[0].scene_id}")
+print(f"Verified download: {file_path.name} ({file_path.stat().st_size} bytes)")
+```
+- **Verified Download Result**: `S2A_MSIL2A_20240416T053641_N0510_R005_T43QBB_20240416T095346_SCL_20m.jp2` (469,085 bytes, valid JPEG 2000 binary).
+

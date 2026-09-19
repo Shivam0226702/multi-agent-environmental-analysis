@@ -177,6 +177,26 @@ class TestAuthenticationHandling(unittest.TestCase):
             get_cdse_access_token(username="user@test.com", password="wrong_password")
         self.assertIn("CDSE authentication failed (401)", str(ctx.exception))
 
+    @patch.dict("os.environ", {}, clear=True)
+    def test_check_cdse_authentication_missing(self) -> None:
+        from tools.satellite_download import check_cdse_authentication
+        is_auth, msg = check_cdse_authentication()
+        self.assertFalse(is_auth)
+        self.assertEqual(msg, "CDSE credentials not configured locally.")
+
+    @patch.dict("os.environ", {"CDSE_USERNAME": "test_user", "CDSE_PASSWORD": "test_password"}, clear=True)
+    @patch("tools.satellite_download.requests.post")
+    def test_check_cdse_authentication_success(self, mock_post: MagicMock) -> None:
+        from tools.satellite_download import check_cdse_authentication
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"access_token": "mock_jwt_token_over_20_chars_long"}
+        mock_post.return_value = mock_resp
+
+        is_auth, msg = check_cdse_authentication()
+        self.assertTrue(is_auth)
+        self.assertEqual(msg, "Authentication successful")
+
 
 class TestFileValidation(unittest.TestCase):
     """Test local file validation routines."""
